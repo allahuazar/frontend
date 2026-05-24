@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Search, Globe, GraduationCap, Code, PenTool, Play, FileUp, ArrowRight, Sparkles } from "lucide-react";
+import { Search, Globe, GraduationCap, Code, PenTool, Play, Plus, Mic, ArrowUp, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SearchBoxProps {
@@ -9,21 +9,19 @@ interface SearchBoxProps {
   placeholder?: string;
   initialValue?: string;
   isCompact?: boolean;
+  theme?: "dark" | "light";
 }
 
 const FOCUS_MODES = [
   { id: "all", name: "All", icon: Globe, description: "Search the entire web" },
-  { id: "academic", name: "Academic", icon: GraduationCap, description: "Search peer-reviewed papers" },
-  { id: "code", name: "Code", icon: Code, description: "Search github & coding docs" },
-  { id: "writing", name: "Writing", icon: PenTool, description: "Generate text without search" },
-  { id: "youtube", name: "YouTube", icon: Play, description: "Search inside videos" },
 ];
 
 export default function SearchBox({
   onSearch,
-  placeholder = "Ask EDURENDER anything...",
+  placeholder = "Ask Edurender",
   initialValue = "",
   isCompact = false,
+  theme = "dark",
 }: SearchBoxProps) {
   const [query, setQuery] = useState(initialValue);
   const [selectedFocus, setSelectedFocus] = useState("all");
@@ -63,97 +61,77 @@ export default function SearchBox({
       onSubmit={handleSubmit}
       ref={containerRef}
       className={cn(
-        "group w-full transition duration-300",
+        "group w-full transition-all duration-300",
         isCompact 
-          ? "rounded-xl border border-zinc-800/30 bg-zinc-900/20 backdrop-blur-2xl px-3 py-2 flex items-center gap-2"
-          : "rounded-2xl border border-zinc-800/30 bg-zinc-900/20 backdrop-blur-2xl p-4 flex flex-col gap-3"
+          ? "rounded-full border px-3 py-1.5 flex items-center gap-2"
+          : "rounded-[26px] border flex items-center gap-2 transition-all duration-300",
+        theme === "dark" 
+          ? "border-zinc-800/40 bg-zinc-900/40 backdrop-blur-2xl shadow-2xl" 
+          : "border-[#E5E7EB] bg-white/80 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] focus-within:shadow-[0_8px_30px_rgb(0,0,0,0.08)] focus-within:border-indigo-500/30"
       )}
     >
-      <div className="flex items-start w-full gap-3">
-        {!isCompact && (
-          <div className="mt-2.5 flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-950/40 border border-zinc-900/30">
-            <Sparkles className="h-3.5 w-3.5 text-zinc-500 group-focus-within:text-white/60 transition duration-200" />
-          </div>
-        )}
-
-        <textarea
-          ref={inputRef}
-          value={query}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          rows={1}
-          placeholder={placeholder}
+      <div className={cn(
+        "flex items-center w-full gap-2",
+        isCompact ? "px-1" : "px-3 py-1.5"
+      )}>
+        {/* Plus Button - Left side */}
+        <button
+          type="button"
           className={cn(
-            "w-full bg-transparent text-sm text-white/40 placeholder:text-white/20 outline-none resize-none min-h-[20px] max-h-[200px] font-sans leading-relaxed pt-1.5",
-            isCompact ? "h-7 pt-1" : ""
+            "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200 cursor-pointer shrink-0",
+            theme === "dark" ? "text-zinc-400 hover:text-white hover:bg-zinc-800" : "text-zinc-500 hover:bg-[#F7F7F8] hover:text-[#111827]"
           )}
-        />
+          title="Add files and more"
+        >
+          <Plus className="h-5 w-5" />
+        </button>
 
-        {isCompact && (
+        {/* Dynamic Textarea */}
+        <div className="flex-1 min-w-0 py-2">
+          <textarea
+            ref={inputRef}
+            value={query}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            rows={1}
+            placeholder={placeholder}
+            className={cn(
+              "w-full bg-transparent text-[15px] outline-none resize-none min-h-[26px] max-h-[200px] font-sans leading-relaxed transition-colors duration-200 py-1.5",
+              theme === "dark" ? "text-white/90 placeholder:text-white/30" : "text-[#111827] placeholder:text-zinc-400",
+              isCompact ? "h-6 py-0.5" : ""
+            )}
+          />
+        </div>
+
+        {/* Action Buttons - Right side */}
+        <div className="flex items-center gap-1 shrink-0">
+          {!isCompact && (
+            <button
+              type="button"
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200 cursor-pointer",
+                theme === "dark" ? "text-zinc-400 hover:text-white hover:bg-zinc-800" : "text-zinc-500 hover:bg-[#F7F7F8] hover:text-[#111827]"
+              )}
+              title="Start dictation"
+            >
+              <Mic className="h-4.5 w-4.5" />
+            </button>
+          )}
+
           <button
             type="submit"
             disabled={!query.trim()}
             className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-lg bg-white text-black transition hover:scale-105 disabled:opacity-40 disabled:hover:scale-100 cursor-pointer shrink-0"
+              "flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200 active:scale-90 disabled:opacity-20 disabled:grayscale disabled:pointer-events-none cursor-pointer",
+              theme === "dark" ? "bg-white text-black" : "bg-[#111827] text-white shadow-lg shadow-black/10"
             )}
           >
-            <ArrowRight className="h-4 w-4" />
+            <ArrowUp className="h-4.5 w-4.5" />
           </button>
-        )}
-      </div>
-
-      {!isCompact && (
-        <div className="flex flex-wrap items-center justify-between border-t border-zinc-900/60 pt-3 mt-1 select-none">
-          {/* Focus Modes list */}
-          <div className="flex items-center gap-1 overflow-x-auto py-1 scrollbar-none">
-            {FOCUS_MODES.map((mode) => {
-              const Icon = mode.icon;
-              const isSelected = selectedFocus === mode.id;
-              return (
-                <button
-                  key={mode.id}
-                  type="button"
-                  onClick={() => setSelectedFocus(mode.id)}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-200",
-                    isSelected
-                      ? "bg-zinc-800/80 text-white border border-zinc-700/50 shadow-sm"
-                      : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30 border border-transparent"
-                  )}
-                  title={mode.description}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  <span>{mode.name}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Right utility buttons: Attach and Search submit */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-900 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/40 transition duration-200 cursor-pointer"
-              title="Attach screenshot or document"
-            >
-              <FileUp className="h-4 w-4" />
-            </button>
-
-            <button
-              type="submit"
-              disabled={!query.trim()}
-              className={cn(
-                "flex h-9 px-4 items-center gap-1.5 rounded-xl text-xs font-semibold bg-white text-black hover:bg-zinc-200 transition duration-200 active:scale-95 disabled:opacity-40 disabled:hover:scale-100 disabled:pointer-events-none cursor-pointer"
-              )}
-            >
-              <span>Search</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </button>
-          </div>
         </div>
-      )}
+      </div>
     </form>
   );
 }

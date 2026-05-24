@@ -53,16 +53,42 @@
   --radius: 0.625rem;
 }
 
+.light {
+  --background: #FFFFFF;
+  --foreground: #111827;
+  --card: #FFFFFF;
+  --card-foreground: #111827;
+  --popover: #FFFFFF;
+  --popover-foreground: #111827;
+  --primary: #4F46E5;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F7F7F8;
+  --secondary-foreground: #111827;
+  --muted: #F7F7F8;
+  --muted-foreground: #6B7280;
+  --accent: #F4F4F5;
+  --accent-foreground: #111827;
+  --border: #E5E7EB;
+  --input: #E5E7EB;
+  --ring: #4F46E5;
+}
+
 @layer base {
   * {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground transition-colors duration-200;
   }
   html {
-    @apply font-sans scroll-smooth;
+    @apply font-sans scroll-smooth transition-colors duration-200;
   }
+}
+
+/* ===== NOISE TEXTURE ===== */
+.bg-noise {
+  background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+  filter: contrast(120%) brightness(100%);
 }
 
 /* ===== SPOTLIGHT BACKGROUND SYSTEM ===== */

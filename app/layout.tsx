@@ -8,9 +8,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Nexus AI — Intelligence Without Limits",
+  title: "Edurender — Minimalist Academic Intelligence",
   description:
-    "Nexus AI pioneers the next generation of artificial intelligence, building systems that learn, adapt, and evolve in real-time.",
+    "Edurender provides a clean, focused environment for academic research and intelligent visualization.",
 };
 
 export default function RootLayout({
@@ -20,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} antialiased`}>
-      <body className="min-h-screen bg-[#0A0A0F] text-zinc-100 font-sans">
+      <body className="min-h-screen font-sans">
         {children}
       </body>
     </html>

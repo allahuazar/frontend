@@ -1,20 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Sidebar from "@/components/sidebar";
-import FloatingGrid from "@/components/floating-grid";
+import { cn } from "@/lib/utils";
 import Navbar from "@/components/navbar";
 import Hero from "@/components/hero";
 import ChatView from "@/components/chat-view";
-
-import { ParticleCanvas } from "@/components/ParticleCanvas";
 import Background from "@/components/Background";
+import { Thread, Theme } from "@/types";
 
-interface Thread {
-  id: string;
-  title: string;
-  date: string;
-}
+
 
 export default function Home() {
   const [threads, setThreads] = useState<Thread[]>([
@@ -24,10 +20,13 @@ export default function Home() {
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [activeQuery, setActiveQuery] = useState<string | null>(null);
   const [activeFocusMode, setActiveFocusMode] = useState<string>("all");
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [theme, setTheme] = useState<Theme>("dark");
 
   const handleSearchSubmit = (queryText: string, focusMode: string) => {
     setActiveQuery(queryText);
     setActiveFocusMode(focusMode);
+    setIsMobileSidebarOpen(false);
 
     // Create a new thread representation
     const newThreadId = "thread-" + Date.now();
@@ -48,11 +47,13 @@ export default function Home() {
       setActiveQuery(thread.title);
       setActiveFocusMode("all");
     }
+    setIsMobileSidebarOpen(false);
   };
 
   const handleNewThread = () => {
     setActiveQuery(null);
     setActiveThreadId(null);
+    setIsMobileSidebarOpen(false);
   };
 
   // Helper when ChatView adds or triggers a thread creation internally
@@ -70,23 +71,30 @@ export default function Home() {
       });
       setActiveThreadId(id);
     }
+    setIsMobileSidebarOpen(false);
   };
 
   return (
-    <main className="relative flex h-screen w-screen overflow-hidden bg-black text-white font-sans">
+    <main className={cn(
+      "relative flex h-screen w-screen overflow-hidden font-sans transition-all duration-200",
+      theme === "dark" ? "bg-black text-white" : "light bg-white text-black"
+    )}>
       {/* Background radial fog layer */}
-      <Background />
+      <Background theme={theme} />
 
-      {/* WebGL Particle Background */}
-      <ParticleCanvas
-        maxParticles={1000}
-        particleSizeMin={2}
-        particleSizeMax={5}
-        speedScale={2}
-      />
 
-      {/* Cinematic animated grid particles background */}
-      <FloatingGrid />
+      {/* Mobile Sidebar Backdrop Overlay */}
+      <AnimatePresence>
+        {isMobileSidebarOpen && (
+          <motion.div 
+            initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+            animate={{ opacity: 1, backdropFilter: "blur(8px)" }}
+            exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+            className="fixed inset-0 z-30 bg-black/40 md:hidden"
+            onClick={() => setIsMobileSidebarOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Sidebar Controls */}
       <Sidebar
@@ -94,16 +102,23 @@ export default function Home() {
         activeThreadId={activeThreadId}
         onSelectThread={handleSelectThread}
         onNewThread={handleNewThread}
+        isMobileOpen={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
+        theme={theme}
       />
 
       {/* Main Content Pane */}
-      <div className="relative z-10 flex flex-1 flex-col overflow-hidden bg-zinc-950/20">
+      <div className="relative z-10 flex flex-1 flex-col overflow-hidden">
         {activeQuery === null ? (
           <>
             {/* Show Home Hero Panel */}
-            <Navbar />
+            <Navbar 
+              onToggleSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)} 
+              theme={theme}
+              onThemeToggle={() => setTheme(theme === "dark" ? "light" : "dark")}
+            />
             <div className="flex flex-1 items-center justify-center">
-              <Hero onSearch={handleSearchSubmit} />
+              <Hero onSearch={handleSearchSubmit} theme={theme} />
             </div>
           </>
         ) : (
@@ -113,6 +128,8 @@ export default function Home() {
             initialFocusMode={activeFocusMode}
             onReset={handleNewThread}
             onThreadCreated={handleThreadCreated}
+            onToggleSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+            theme={theme}
           />
         )}
       </div>

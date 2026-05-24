@@ -2,64 +2,33 @@
 
 import { motion } from "framer-motion";
 import SearchBox from "./search-box";
+import { cn } from "@/lib/utils";
+import { Theme } from "@/types";
 
 interface HeroProps {
   onSearch: (query: string, focusMode: string) => void;
+  theme?: Theme;
 }
 
-export default function Hero({ onSearch }: HeroProps) {
+export default function Hero({ onSearch, theme = "dark" }: HeroProps) {
   return (
-    <section className="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center max-w-4xl mx-auto w-full select-none">
-      {/* Title */}
-      <motion.h1
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="max-w-4xl text-5xl font-bold tracking-tight md:text-7xl text-white/60"
-      >
-        EDURENDER
-      </motion.h1>
-
-      {/* Subdescription */}
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.5 }}
-        transition={{ delay: 0.2 }}
-        className="mt-6 max-w-xl text-zinc-400"
-      >
-        Learn smarter with an AI-powered education engine.
-      </motion.p>
-
-      {/* Search box container */}
+    <section className="flex flex-1 flex-col items-center justify-start px-6 pt-6 pb-12 text-center max-w-4xl mx-auto w-full select-none">
+      <div className={cn(
+      "flex flex-col items-center justify-center min-h-[70vh] px-4 sm:px-6 transition-colors duration-200",
+      theme === "dark" ? "text-white" : "text-[#111827]"
+    )}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
-        className="mt-10 w-full max-w-2xl"
+        transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+        className="w-full max-w-7xl text-center space-y-8"
       >
-        <SearchBox onSearch={onSearch} />
-      </motion.div>
+        <div className="relative group pt-4">
+          <SearchBox onSearch={onSearch} theme={theme} />
+        </div>
 
-      {/* Trust factors or quick instructions */}
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1, delay: 0.45 }}
-        className="mt-12 flex flex-wrap justify-center gap-x-6 gap-y-3 text-[11px] font-medium text-zinc-600"
-      >
-        <span className="flex items-center gap-1.5">
-          <span className="h-1 w-1 rounded-full bg-zinc-700" />
-          Multi-Agent Web Reranking
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-1 w-1 rounded-full bg-zinc-700" />
-          Interactive Citation Clusters
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-1 w-1 rounded-full bg-zinc-700" />
-          Follow-up Thread Memory
-        </span>
       </motion.div>
+    </div>
     </section>
   );
 }

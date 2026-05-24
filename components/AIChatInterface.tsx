@@ -20,9 +20,11 @@ import {
   ArrowUpRight,
   MessageSquare,
   Activity,
-  Cpu
+  Cpu,
+  Menu
 } from "lucide-react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 interface Message {
   id: string;
@@ -143,6 +145,8 @@ export default function AIChatInterface() {
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const activeChat = chats.find((c) => c.id === activeChatId) || chats[0];
@@ -156,11 +160,21 @@ export default function AIChatInterface() {
     scrollToBottom();
   }, [activeChat?.messages, streamedText, isReasoning, reasoningProgress]);
 
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   // Handle Select Chat
   const selectChat = (id: string) => {
     setActiveChatId(id);
     setStreamedText("");
     setIsReasoning(false);
+    setIsMobileSidebarOpen(false);
   };
 
   // Handle New Chat
@@ -177,6 +191,7 @@ export default function AIChatInterface() {
     setActiveChatId(newChatId);
     setStreamedText("");
     setIsReasoning(false);
+    setIsMobileSidebarOpen(false);
   };
 
   // Handle Delete Chat
@@ -249,6 +264,7 @@ Let me know what specific section we should expand next!`;
   // Handle Send Message
   const handleSendMessage = async (text: string) => {
     if (!text.trim()) return;
+    setIsMobileSidebarOpen(false);
 
     // Add user message
     const userMsg: Message = {
@@ -333,36 +349,48 @@ Let me know what specific section we should expand next!`;
 
   return (
     <div className="flex h-screen bg-[#0A0A0F] text-zinc-200 overflow-hidden font-sans relative">
-      {/* Dynamic particles grid in background */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-950/20 via-zinc-950 to-zinc-950 pointer-events-none z-0" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_80%)] pointer-events-none z-0" />
+
+      {/* Mobile Sidebar Backdrop Overlay */}
+      {isMobile && isMobileSidebarOpen && (
+        <div 
+          className="fixed inset-0 z-30 bg-black/65 backdrop-blur-md md:hidden transition-all duration-300"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
 
       {/* Sidebar Navigation */}
       <motion.aside
-        animate={{ width: isSidebarCollapsed ? 80 : 288 }}
+        initial={false}
+        animate={
+          isMobile
+            ? { x: isMobileSidebarOpen ? 0 : -288, width: 288 }
+            : { x: 0, width: isSidebarCollapsed ? 80 : 288 }
+        }
         transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-        className="border-r border-zinc-900 bg-zinc-950/75 backdrop-blur-xl flex flex-col z-10 shrink-0 relative select-none"
+        className={cn(
+          "border-r border-zinc-900 bg-zinc-950/95 backdrop-blur-xl flex flex-col shrink-0 select-none",
+          isMobile
+            ? "fixed inset-y-0 left-0 z-40 shadow-2xl"
+            : "relative z-10 bg-zinc-950/75"
+        )}
       >
         {/* Brand Header */}
         <div className="flex h-20 items-center justify-between border-b border-zinc-900 px-4">
           <AnimatePresence mode="wait">
-            {!isSidebarCollapsed ? (
+            {(isMobile || !isSidebarCollapsed) ? (
               <motion.div
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
                 className="flex items-center gap-2.5 pl-2"
               >
-                <div className="h-7 w-7 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/10">
-                  <Brain className="h-4 w-4 text-white animate-pulse" />
+                <div className="h-7 w-7 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center">
+                  <Brain className="h-4 w-4 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xs font-semibold uppercase tracking-widest text-white leading-none">
+                  <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-100 leading-none">
                     EduRender
                   </h2>
-                  <span className="text-[9px] text-indigo-400 font-mono tracking-wider font-semibold uppercase">
-                    Assistant v2.5
-                  </span>
                 </div>
               </motion.div>
             ) : (
@@ -378,15 +406,25 @@ Let me know what specific section we should expand next!`;
             )}
           </AnimatePresence>
 
-          {/* Home Link Shortcut */}
-          {!isSidebarCollapsed && (
-            <Link
-              href="/"
-              className="flex items-center gap-1 text-[10px] bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white px-2 py-1 rounded-md transition duration-200"
+          {/* Home Link Shortcut / Mobile Close X Button */}
+          {isMobile ? (
+            <button 
+              onClick={() => setIsMobileSidebarOpen(false)}
+              className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-900/50 transition cursor-pointer"
+              title="Close Sidebar"
             >
-              <ArrowLeft className="h-3 w-3" />
-              <span>Search Hub</span>
-            </Link>
+              <X className="h-4.5 w-4.5" />
+            </button>
+          ) : (
+            !isSidebarCollapsed && (
+              <Link
+                href="/"
+                className="flex items-center gap-1 text-[10px] bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white px-2 py-1 rounded-md transition duration-200"
+              >
+                <ArrowLeft className="h-3 w-3" />
+                <span>Search Hub</span>
+              </Link>
+            )
           )}
         </div>
 
@@ -397,13 +435,13 @@ Let me know what specific section we should expand next!`;
             className="w-full flex items-center justify-center gap-2.5 rounded-xl bg-white hover:bg-zinc-100 text-zinc-950 font-semibold py-3 transition shadow-lg shadow-white/5 active:scale-[0.98]"
           >
             <Plus className="h-4 w-4 stroke-[3px]" />
-            {!isSidebarCollapsed && <span className="text-xs">New Chat</span>}
+            {(isMobile || !isSidebarCollapsed) && <span className="text-xs">New Chat</span>}
           </button>
         </div>
 
         {/* Dynamic Chats List */}
         <div className="flex-1 overflow-y-auto px-3 space-y-1.5 scrollbar-thin scrollbar-thumb-zinc-900">
-          {!isSidebarCollapsed && chats.length > 0 && (
+          {(isMobile || !isSidebarCollapsed) && chats.length > 0 && (
             <p className="px-3 text-[10px] font-bold tracking-wider text-zinc-500 uppercase select-none mb-1">
               Conversations
             </p>
@@ -423,14 +461,14 @@ Let me know what specific section we should expand next!`;
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     <MessageSquare className={`h-4 w-4 shrink-0 ${isActive ? "text-indigo-400" : "text-zinc-500 group-hover:text-zinc-400"}`} />
-                    {!isSidebarCollapsed && (
+                    {(isMobile || !isSidebarCollapsed) && (
                       <span className="text-xs font-medium truncate pr-2">
                         {chat.title}
                       </span>
                     )}
                   </div>
 
-                  {!isSidebarCollapsed && (
+                  {(isMobile || !isSidebarCollapsed) && (
                     <span
                       onClick={(e) => handleDeleteChat(chat.id, e)}
                       className="opacity-0 group-hover:opacity-100 p-1 hover:bg-zinc-800/80 rounded-md text-zinc-500 hover:text-rose-400 transition cursor-pointer shrink-0"
@@ -445,17 +483,19 @@ Let me know what specific section we should expand next!`;
           </div>
         </div>
 
-        {/* Sidebar Collapse Toggle */}
-        <button
-          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          className="absolute -right-3 top-1/2 transform -translate-y-1/2 h-6 w-6 rounded-full border border-zinc-800 bg-zinc-950 flex items-center justify-center text-zinc-500 hover:text-white transition z-50 cursor-pointer shadow-lg"
-        >
-          <ChevronRight className={`h-3 w-3 transform transition-transform duration-300 ${isSidebarCollapsed ? "" : "rotate-180"}`} />
-        </button>
+        {/* Sidebar Collapse Toggle (Hidden on Mobile) */}
+        {!isMobile && (
+          <button
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="absolute -right-3 top-1/2 transform -translate-y-1/2 h-6 w-6 rounded-full border border-zinc-800 bg-zinc-950 flex items-center justify-center text-zinc-500 hover:text-white transition z-50 cursor-pointer shadow-lg"
+          >
+            <ChevronRight className={`h-3 w-3 transform transition-transform duration-300 ${isSidebarCollapsed ? "" : "rotate-180"}`} />
+          </button>
+        )}
 
         {/* Footer info */}
         <div className="p-4 border-t border-zinc-900/80 flex flex-col gap-1 text-[11px] text-zinc-500">
-          {!isSidebarCollapsed ? (
+          {(isMobile || !isSidebarCollapsed) ? (
             <div className="flex items-center justify-between">
               <span>EduRender AI © 2026</span>
               <span className="flex items-center gap-1 font-mono text-[9px] text-zinc-600 bg-zinc-900 border border-zinc-800/60 px-1.5 py-0.5 rounded">
@@ -473,16 +513,26 @@ Let me know what specific section we should expand next!`;
       {/* Main Chat Area */}
       <main className="flex-1 flex flex-col z-10 overflow-hidden relative">
         {/* Top Header Banner */}
-        <header className="border-b border-zinc-900 px-6 py-4 flex items-center justify-between bg-zinc-950/40 backdrop-blur-md shrink-0">
+        <header className="border-b border-zinc-900 px-4 sm:px-6 py-4 flex items-center justify-between bg-zinc-950/40 backdrop-blur-md shrink-0">
           <div className="flex items-center gap-3">
-            {isSidebarCollapsed && (
-              <Link
-                href="/"
-                className="flex items-center justify-center h-8 w-8 rounded-lg border border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:text-white transition duration-200 mr-2"
-                title="Go back to home"
+            {isMobile ? (
+              <button 
+                onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+                className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-900/50 transition cursor-pointer md:hidden mr-1"
+                title="Open Sidebar"
               >
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
+                <Menu className="h-5 w-5" />
+              </button>
+            ) : (
+              isSidebarCollapsed && (
+                <Link
+                  href="/"
+                  className="flex items-center justify-center h-8 w-8 rounded-lg border border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:text-white transition duration-200 mr-2"
+                  title="Go back to home"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Link>
+              )
             )}
             <div>
               <h1 className="text-sm font-bold text-white flex items-center gap-1.5">
@@ -505,36 +555,16 @@ Let me know what specific section we should expand next!`;
               <span>Upgrade</span>
             </button>
 
-            {/* Profile Avatar / Settings Dropdown */}
             <div className="relative group">
-              <button className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shadow-md border border-white/10 active:scale-95">
-                AI
+              <button className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-400">
+                U
               </button>
-              {/* Floating Dropdown */}
-              <div className="absolute right-0 mt-2 w-48 rounded-xl bg-zinc-950 border border-zinc-900 p-2 shadow-2xl opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition duration-200 z-50">
-                <p className="px-3 py-1.5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono">
-                  Account Details
-                </p>
-                <div className="h-px bg-zinc-900 my-1" />
-                <button className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-lg transition text-left">
-                  <User className="h-3.5 w-3.5" />
-                  <span>View Profile</span>
-                </button>
-                <button className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-lg transition text-left">
-                  <Settings className="h-3.5 w-3.5" />
-                  <span>Preferences</span>
-                </button>
-                <button className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-lg transition text-left">
-                  <HelpCircle className="h-3.5 w-3.5" />
-                  <span>Support Center</span>
-                </button>
-              </div>
             </div>
           </div>
         </header>
 
         {/* Conversations Container */}
-        <section className="flex-1 overflow-y-auto px-6 py-8 space-y-8 scrollbar-thin scrollbar-thumb-zinc-900 select-text">
+        <section className="flex-1 overflow-y-auto px-4 sm:px-6 py-8 space-y-8 scrollbar-thin scrollbar-thumb-zinc-900 select-text">
           {activeChat.messages.map((msg, index) => {
             const isUser = msg.role === "user";
             return (
@@ -544,7 +574,7 @@ Let me know what specific section we should expand next!`;
               >
                 {/* Assistant Avatar */}
                 {!isUser && (
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center shadow-lg shadow-indigo-500/5 mt-0.5 select-none">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center shadow-lg shadow-indigo-500/5 mt-0.5 select-none shrink-0">
                     <Sparkles className="h-4 w-4 text-indigo-400 animate-pulse" />
                   </div>
                 )}
@@ -623,7 +653,7 @@ Let me know what specific section we should expand next!`;
 
                 {/* User Avatar */}
                 {isUser && (
-                  <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 text-xs font-semibold shadow-inner mt-0.5 select-none">
+                  <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 text-xs font-semibold shadow-inner mt-0.5 select-none shrink-0">
                     U
                   </div>
                 )}
@@ -640,7 +670,7 @@ Let me know what specific section we should expand next!`;
                 exit={{ opacity: 0, y: -15 }}
                 className="flex gap-4 items-start"
               >
-                <div className="w-9 h-9 rounded-xl bg-indigo-950/40 border border-indigo-500/25 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-indigo-950/40 border border-indigo-500/25 flex items-center justify-center shrink-0">
                   <Activity className="h-4 w-4 text-indigo-400 animate-spin" />
                 </div>
 
@@ -680,7 +710,7 @@ Let me know what specific section we should expand next!`;
                 animate={{ opacity: 1, y: 0 }}
                 className="flex gap-4 items-start"
               >
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
                   <Sparkles className="h-4 w-4 text-indigo-400 animate-pulse" />
                 </div>
 
@@ -748,7 +778,7 @@ Let me know what specific section we should expand next!`;
               </div>
 
               {/* Suggestions Grid */}
-              <div className="grid grid-cols-2 gap-3.5 mt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-2">
                 {SUGGESTIONS.map((sug, idx) => (
                   <button
                     key={idx}
@@ -819,7 +849,7 @@ Let me know what specific section we should expand next!`;
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="relative w-full max-w-2xl bg-zinc-950 border border-zinc-800 rounded-3xl p-8 overflow-hidden shadow-2xl z-10"
+              className="relative w-full max-w-2xl bg-zinc-950 border border-zinc-800 rounded-3xl p-6 sm:p-8 overflow-y-auto max-h-[90vh] shadow-2xl z-10"
             >
               {/* Decorative side lights */}
               <div className="absolute -top-32 -right-32 h-64 w-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -847,7 +877,7 @@ Let me know what specific section we should expand next!`;
               </div>
 
               {/* Plan Cards Grid */}
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 {/* Standard Free tier */}
                 <div className="p-6 rounded-2xl border border-zinc-900 bg-zinc-900/10 flex flex-col justify-between">
                   <div className="space-y-4">

@@ -2,38 +2,35 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Globe, FileText, ChevronRight, X, ExternalLink } from "lucide-react";
+import { Globe, X, ExternalLink, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-export interface Source {
-  id: string;
-  title: string;
-  url: string;
-  snippet: string;
-  siteName: string;
-}
+import { Source } from "@/types";
 
 interface SourcesPanelProps {
   sources: Source[];
+  theme?: "dark" | "light";
 }
 
-export default function SourcesPanel({ sources }: SourcesPanelProps) {
+export default function SourcesPanel({ sources, theme = "dark" }: SourcesPanelProps) {
   const [selectedSource, setSelectedSource] = useState<Source | null>(null);
 
   return (
     <div className="w-full space-y-3">
       {/* Sources Panel Header */}
-      <div className="flex items-center gap-2 select-none">
-        <Globe className="h-4 w-4 text-zinc-500" />
-        <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+      <div className="flex items-center gap-2 select-none transition-colors duration-200">
+        <Globe className={cn("h-4 w-4", theme === "dark" ? "text-zinc-500" : "text-[#111827]")} />
+        <h3 className={cn("text-xs font-semibold uppercase tracking-wider", theme === "dark" ? "text-zinc-400" : "text-[#111827]")}>
           Sources
         </h3>
-        <span className="text-[10px] bg-zinc-900 border border-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded-md font-mono">
+        <span className={cn(
+          "text-[10px] border px-1.5 py-0.5 rounded-md font-mono transition-all",
+          theme === "dark" ? "bg-zinc-900 border-zinc-800 text-zinc-400" : "bg-[#F7F7F8] border-[#E5E7EB] text-zinc-500"
+        )}>
           {sources.length} sources found
         </span>
       </div>
 
-      {/* Grid of source chips */}
+      {/* Grid of source cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 select-none">
         {sources.map((source, index) => (
           <motion.div
@@ -42,28 +39,47 @@ export default function SourcesPanel({ sources }: SourcesPanelProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: index * 0.05 }}
             onClick={() => setSelectedSource(source)}
-            className="group flex flex-col justify-between p-3 rounded-xl border border-zinc-900 bg-zinc-950/45 hover:bg-zinc-900/50 hover:border-zinc-800 transition duration-200 cursor-pointer text-left"
+            className={cn(
+              "group flex flex-col justify-between rounded-xl border transition-all duration-200 cursor-pointer overflow-hidden",
+              theme === "dark" 
+                ? "border-zinc-900 bg-zinc-950/45 hover:bg-zinc-900/50 hover:border-zinc-800" 
+                : "border-[#E5E7EB] bg-[#F7F7F8] hover:bg-[#E5E7EB]/50 hover:shadow-sm"
+            )}
           >
-            <div>
-              {/* Site Name and Citation Badge */}
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 truncate max-w-[80%] font-medium">
+            <div className="flex flex-col gap-1 p-3 h-full">
+              <div className="flex items-center gap-2 mb-1">
+                <div className={cn(
+                  "h-4 w-4 rounded flex items-center justify-center shrink-0",
+                  theme === "dark" ? "bg-zinc-800" : "bg-white border border-[#E5E7EB]"
+                )}>
+                  {source.favicon ? (
+                    <img src={source.favicon} alt="" className="h-2.5 w-2.5" />
+                  ) : (
+                    <Globe className="h-2.5 w-2.5 text-zinc-500" />
+                  )}
+                </div>
+                <span className={cn(
+                  "text-[10px] font-medium truncate",
+                  theme === "dark" ? "text-zinc-500 group-hover:text-zinc-300" : "text-zinc-500 group-hover:text-[#111827]"
+                )}>
                   {source.siteName}
                 </span>
-                <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-zinc-900 border border-zinc-800 text-[9px] font-mono text-zinc-400 font-semibold group-hover:bg-zinc-800/80 group-hover:text-white transition">
-                  {index + 1}
-                </span>
               </div>
-              {/* Source Title */}
-              <h4 className="text-xs font-semibold text-zinc-300 group-hover:text-white line-clamp-2 leading-relaxed">
+              <h4 className={cn(
+                "text-[11px] font-semibold line-clamp-2 leading-snug",
+                theme === "dark" ? "text-zinc-200 group-hover:text-white" : "text-[#111827]"
+              )}>
                 {source.title}
               </h4>
             </div>
-
-            {/* Micro action details */}
-            <div className="flex items-center gap-1 mt-3 text-[10px] text-zinc-600 group-hover:text-zinc-400 transition">
-              <span className="truncate max-w-[85%] font-mono">{new URL(source.url).hostname}</span>
-              <ChevronRight className="h-3 w-3 shrink-0" />
+            
+            <div className="px-3 pb-3 flex items-center gap-1 text-[9px] text-zinc-500">
+               <span className="truncate max-w-[85%] font-mono opacity-60">
+                 {(() => {
+                   try { return new URL(source.url).hostname; } catch(e) { return source.url; }
+                 })()}
+               </span>
+               <ChevronRight className="h-2.5 w-2.5 shrink-0 opacity-40" />
             </div>
           </motion.div>
         ))}
@@ -72,51 +88,66 @@ export default function SourcesPanel({ sources }: SourcesPanelProps) {
       {/* Expandable Snippet Modal Drawer */}
       <AnimatePresence>
         {selectedSource && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm select-none">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm select-none">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="relative w-full max-w-lg rounded-2xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl overflow-hidden glass-panel"
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className={cn(
+                "relative w-full max-w-lg rounded-[24px] border p-6 shadow-2xl overflow-hidden transition-all duration-200",
+                theme === "dark" ? "border-zinc-800 bg-zinc-950" : "border-[#E5E7EB] bg-white"
+              )}
             >
-              {/* Card top gradient */}
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-zinc-700 via-zinc-400 to-zinc-800" />
-
               {/* Close Button */}
               <button
                 onClick={() => setSelectedSource(null)}
-                className="absolute top-4 right-4 h-8 w-8 rounded-lg border border-zinc-900 bg-zinc-950/40 flex items-center justify-center text-zinc-500 hover:text-white hover:bg-zinc-900 transition cursor-pointer"
+                className={cn(
+                  "absolute top-4 right-4 h-8 w-8 rounded-full flex items-center justify-center transition cursor-pointer",
+                  theme === "dark" ? "bg-zinc-800 text-zinc-400 hover:text-white" : "bg-[#F7F7F8] text-zinc-500 hover:text-[#111827]"
+                )}
               >
                 <X className="h-4 w-4" />
               </button>
 
               {/* Source Header details */}
-              <div className="space-y-1.5 mt-2">
-                <span className="text-[10px] bg-zinc-900 border border-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full font-mono">
+              <div className="space-y-1.5 mt-2 transition-colors duration-200">
+                <span className={cn(
+                  "text-[10px] border px-2 py-0.5 rounded-full font-mono transition-all",
+                  theme === "dark" ? "bg-zinc-900 border-zinc-800 text-zinc-400" : "bg-[#F7F7F8] text-zinc-600 border-[#E5E7EB]"
+                )}>
                   {selectedSource.siteName}
                 </span>
-                <h3 className="text-base font-semibold text-white leading-snug pt-1">
+                <h3 className={cn(
+                  "text-base font-semibold leading-snug pt-1 transition-colors",
+                  theme === "dark" ? "text-white" : "text-[#111827]"
+                )}>
                   {selectedSource.title}
                 </h3>
                 <a
                   href={selectedSource.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white hover:underline transition font-mono pt-1"
+                  className={cn(
+                    "inline-flex items-center gap-1.5 text-xs transition font-mono pt-1",
+                    theme === "dark" ? "text-zinc-400 hover:text-white" : "text-indigo-600 hover:underline"
+                  )}
                 >
-                  <span>{selectedSource.url}</span>
+                  <span className="truncate max-w-[280px]">{selectedSource.url}</span>
                   <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
 
               {/* Snippet body text */}
-              <div className="mt-5 border-t border-zinc-900 pt-4">
-                <h4 className="text-[10px] font-semibold tracking-wider text-zinc-500 uppercase mb-2">
+              <div className={cn("mt-5 border-t pt-4 transition-all duration-200", theme === "dark" ? "border-zinc-900" : "border-zinc-100")}>
+                <h4 className={cn("text-[10px] font-semibold tracking-wider uppercase mb-2", theme === "dark" ? "text-zinc-500" : "text-zinc-400")}>
                   Extracted Context
                 </h4>
-                <p className="text-sm text-zinc-300 leading-relaxed font-light bg-zinc-900/30 p-4 rounded-xl border border-zinc-900/60 overflow-y-auto max-h-[220px]">
-                  "... {selectedSource.snippet} ..."
+                <p className={cn(
+                  "text-sm leading-relaxed font-normal p-4 rounded-xl border overflow-y-auto max-h-[220px] transition-all",
+                  theme === "dark" ? "bg-zinc-900/30 text-zinc-300 border-zinc-900/60" : "bg-[#F7F7F8] text-[#111827] border-[#E5E7EB]"
+                )}>
+                  {selectedSource.snippet}
                 </p>
               </div>
 
@@ -124,7 +155,10 @@ export default function SourcesPanel({ sources }: SourcesPanelProps) {
               <div className="mt-6 flex justify-end">
                 <button
                   onClick={() => setSelectedSource(null)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 text-zinc-300 transition cursor-pointer"
+                  className={cn(
+                    "px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer",
+                    theme === "dark" ? "bg-white text-black hover:bg-zinc-200" : "bg-[#111827] text-white hover:bg-black"
+                  )}
                 >
                   Close context
                 </button>
